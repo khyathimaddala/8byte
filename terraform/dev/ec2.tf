@@ -16,6 +16,9 @@ resource "aws_instance" "web" {
   user_data       = <<-EOF
                    #!/bin/bash
                    yum update -y
+                   yum install -y docker
+                   systemctl start docker
+                   systemctl enable docker
                    yum install -y httpd
                    systemctl start httpd
                    systemctl enable httpd

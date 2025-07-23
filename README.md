@@ -110,7 +110,7 @@ Run Git commands from the toplevel directory when modifying history to ensure co
 
 
 ###################################################################################
------------------------------------------CI/CD Automation with GitHub Actions----------------------------------------------
+-----------------------------------------CI/CD Automation with GitHub Actions----------------------------------------------!
 Overview
 To streamline the deployment of the "8bytes Application" infrastructure, a CI/CD pipeline has been implemented using GitHub Actions. This automation triggers a Terraform deployment whenever changes are pushed to the main branch, ensuring consistent and repeatable infrastructure updates.
 Configuration

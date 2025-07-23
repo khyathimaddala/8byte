@@ -1,0 +1,15 @@
+{
+  "name": "8byte-app",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "jest",
+    "integration-test": "echo 'Integration tests placeholder'"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  }
+}}
