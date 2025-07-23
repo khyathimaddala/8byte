@@ -9,7 +9,7 @@ data "aws_ami" "amazon_linux" {
 }
 
 resource "aws_instance" "web" {
-  ami             = data.aws_ami.amazon_linux.id # Dynamically fetch latest Amazon Linux 2 AMI
+  ami             = data.aws_ami.amazon_linux.id
   instance_type   = "t2.micro"
   subnet_id       = aws_subnet.public_a.id
   security_groups = [aws_security_group.web_sg.id]
@@ -22,10 +22,7 @@ resource "aws_instance" "web" {
                    yum install -y docker
                    systemctl start docker
                    systemctl enable docker
-                   # Remove Apache to avoid port conflict
                    yum remove -y httpd
-                   # Optional: Pull the initial Docker image (can be done by pipeline)
-                   # docker pull ${secrets.DOCKER_USERNAME}/8byte-app:latest
                    EOF
   tags = {
     Name = "8byte-web-server-dev"
