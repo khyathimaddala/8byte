@@ -22,11 +22,10 @@ resource "aws_instance" "web" {
                    yum install -y docker
                    systemctl start docker
                    systemctl enable docker
-                   yum install -y httpd
-                   systemctl start httpd
-                   systemctl enable httpd
-                   echo '<html><body><h1>8byte Application</h1></body></html>' > /var/www/html/index.html
-                   cp /home/ec2-user/index.html /var/www/html/index.html
+                   # Remove Apache to avoid port conflict
+                   yum remove -y httpd
+                   # Optional: Pull the initial Docker image (can be done by pipeline)
+                   # docker pull ${secrets.DOCKER_USERNAME}/8byte-app:latest
                    EOF
   tags = {
     Name = "8byte-web-server-dev"

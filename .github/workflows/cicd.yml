@@ -91,8 +91,7 @@ jobs:
             --output text
         working-directory: terraform/dev
 
-
-      - name: Verify Deployment
+      - name: Verify Deployment and Troubleshoot
         run: |
           INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=8byte-web-server-dev" --query "Reservations[0].Instances[0].InstanceId" --output text)
           INSTANCE_IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
@@ -103,24 +102,45 @@ jobs:
           fi
           echo "Instance IP: $INSTANCE_IP"
           echo "ALB DNS: $ALB_DNS"
-          # Simple health check
-          curl -s http://$INSTANCE_IP:80 | grep "Hey, Hi 8byte"
-          if [ $? -eq 0 ]; then
+          sleep 30
+          RESPONSE=$(curl -s http://$INSTANCE_IP:80)
+          echo "Response from IP: $RESPONSE"
+          if echo "$RESPONSE" | grep -q "Hey, Hi 8byte"; then
             echo "Deployment verified: Content found"
           else
             echo "Deployment failed: Expected content not found"
-            exit 1
+            # Stop Apache if running
+            aws ssm send-command \
+              --instance-ids "$INSTANCE_ID" \
+              --document-name "AWS-RunShellScript" \
+              --parameters commands="sudo systemctl stop httpd || true" \
+              --output text
+            # Retry container
+            aws ssm send-command \
+              --instance-ids "$INSTANCE_ID" \
+              --document-name "AWS-RunShellScript" \
+              --parameters commands="docker stop 8byte-app || true && docker rm 8byte-app || true && docker run -d -p 80:3000 --name 8byte-app ${{ secrets.DOCKER_USERNAME }}/8byte-app:latest" \
+              --output text
+            sleep 10
+            RESPONSE=$(curl -s http://$INSTANCE_IP:80)
+            echo "Response after restart: $RESPONSE"
+            if echo "$RESPONSE" | grep -q "Hey, Hi 8byte"; then
+              echo "Deployment verified after restart: Content found"
+            else
+              echo "Deployment still failed after restart"
+              exit 1
+            fi
           fi
         env:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-
-      - name: Output Deployment URL
+      - name: Output ALB URL
+        if: success()
         run: |
-          INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=8byte-web-server-dev" --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
-          echo "Deployment URL: http://$INSTANCE_IP"
+          ALB_DNS=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(DNSName, '8byte-alb-dev')].DNSName" --output text | head -n 1)
+          echo "Final URL: http://$ALB_DNS"
         env:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
