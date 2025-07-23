@@ -96,7 +96,11 @@ jobs:
         run: |
           INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=8byte-web-server-dev" --query "Reservations[0].Instances[0].InstanceId" --output text)
           INSTANCE_IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
-          ALB_DNS=$(aws elbv2 describe-load-balancers --names "8byte-alb-dev-1106071171" --query "LoadBalancers[0].DNSName" --output text)
+          ALB_DNS=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(DNSName, '8byte-alb-dev')].DNSName" --output text | head -n 1)
+          if [ -z "$ALB_DNS" ]; then
+            echo "Error: No ALB found with name containing '8byte-alb-dev'"
+            exit 1
+          fi
           echo "Instance IP: $INSTANCE_IP"
           echo "ALB DNS: $ALB_DNS"
           # Simple health check
@@ -111,7 +115,7 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          
+
 
       - name: Output Deployment URL
         run: |
