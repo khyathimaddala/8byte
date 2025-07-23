@@ -16,6 +16,9 @@ resource "aws_instance" "web" {
   user_data       = <<-EOF
                    #!/bin/bash
                    yum update -y
+                   yum install -y amazon-ssm-agent
+                   systemctl enable amazon-ssm-agent
+                   systemctl start amazon-ssm-agent
                    yum install -y docker
                    systemctl start docker
                    systemctl enable docker
