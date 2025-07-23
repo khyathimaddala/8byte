@@ -91,6 +91,37 @@ jobs:
             --output text
         working-directory: terraform/dev
 
+
+      - name: Verify Deployment
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=8byte-web-server-dev" --query "Reservations[0].Instances[0].InstanceId" --output text)
+          INSTANCE_IP=$(aws ec2 describe-instances --instance-ids "$INSTANCE_ID" --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+          ALB_DNS=$(aws elbv2 describe-load-balancers --names "8byte-alb-dev-1106071171" --query "LoadBalancers[0].DNSName" --output text)
+          echo "Instance IP: $INSTANCE_IP"
+          echo "ALB DNS: $ALB_DNS"
+          # Simple health check
+          curl -s http://$INSTANCE_IP:80 | grep "Hey, Hi 8byte"
+          if [ $? -eq 0 ]; then
+            echo "Deployment verified: Content found"
+          else
+            echo "Deployment failed: Expected content not found"
+            exit 1
+          fi
+        env:
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          
+
+      - name: Output Deployment URL
+        run: |
+          INSTANCE_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=8byte-web-server-dev" --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+          echo "Deployment URL: http://$INSTANCE_IP"
+        env:
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
   notify-failures:
     if: failure()
     runs-on: ubuntu-latest

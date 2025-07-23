@@ -25,7 +25,7 @@ resource "aws_instance" "web" {
                    yum install -y httpd
                    systemctl start httpd
                    systemctl enable httpd
-                   echo '<html><body><h1>8bytes Application</h1></body></html>' > /var/www/html/index.html
+                   echo '<html><body><h1>8byte Application</h1></body></html>' > /var/www/html/index.html
                    cp /home/ec2-user/index.html /var/www/html/index.html
                    EOF
   tags = {
