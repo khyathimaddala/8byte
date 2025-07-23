@@ -81,10 +81,12 @@ jobs:
 
       - name: Deploy Docker to EC2
         run: |
+          INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=8byte-web-server-dev" --query "Reservations[].Instances[].InstanceId" --output text)
           aws ssm send-command \
-            --instance-ids "$(aws ec2 describe-instances --filters "Name=tag:Name,Values=8byte-web-server-dev" --query "Reservations[].Instances[].InstanceId" --output text)" \
+            --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --parameters commands="docker pull ${{ secrets.DOCKER_USERNAME }}/8byte-app:latest && docker stop 8byte-app || true && docker rm 8byte-app || true && docker run -d -p 80:3000 --name 8byte-app ${{ secrets.DOCKER_USERNAME }}/8byte-app:latest"
+            --parameters commands="docker pull ${{ secrets.DOCKER_USERNAME }}/8byte-app:latest && docker stop 8byte-app || true && docker rm 8byte-app || true && docker run -d -p 80:3000 --name 8byte-app ${{ secrets.DOCKER_USERNAME }}/8byte-app:latest" \
+            --output text
         working-directory: terraform/dev
 
   notify-failures:
