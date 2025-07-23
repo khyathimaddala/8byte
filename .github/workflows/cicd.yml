@@ -81,7 +81,7 @@ jobs:
 
       - name: Deploy Docker to EC2
         run: |
-          INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=8byte-web-server-dev" --query "Reservations[].Instances[].InstanceId" --output text)
+          INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=8byte-web-server-dev" --query "Reservations[0].Instances[0].InstanceId" --output text)
           aws ssm send-command \
             --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
