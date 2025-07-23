@@ -109,3 +109,55 @@ Test IAM permissions incrementally to catch issues early.
 Run Git commands from the toplevel directory when modifying history to ensure consistency.
 
 
+###################################################################################
+-----------------------------------------CI/CD Automation with GitHub Actions----------------------------------------------
+Overview
+To streamline the deployment of the "8bytes Application" infrastructure, a CI/CD pipeline has been implemented using GitHub Actions. This automation triggers a Terraform deployment whenever changes are pushed to the main branch, ensuring consistent and repeatable infrastructure updates.
+Configuration
+The workflow is defined in .github/workflows/terraform.yml and includes the following steps:
+
+Checkout Code: Retrieves the repository code using actions/checkout@v4.
+Setup Terraform: Installs Terraform version 1.8.0 using hashicorp/setup-terraform@v3.
+Configure AWS Credentials: Sets up AWS credentials via aws-actions/configure-aws-credentials@v4 using secrets stored in GitHub:
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION (set to us-east-1).
+
+
+Terraform Init: Initializes the Terraform working directory (terraform/dev).
+Terraform Validate: Validates the Terraform configuration for syntax and logic errors.
+Terraform Plan: Generates an execution plan to preview changes.
+Terraform Apply: Applies the plan with auto-approval to update the infrastructure.
+
+Setup Process
+
+IAM User Creation:
+An IAM user (github-actions-terraform) was created with permissions including ec2:*, elasticloadbalancing:*, and s3:*.
+Access keys were generated and stored as GitHub Secrets under Settings > Secrets and variables > Actions > Secrets.
+
+
+Workflow Deployment:
+The terraform.yml file was added to .github/workflows/ and committed to the repository.
+The initial push triggered the workflow, automating the deployment process.
+
+
+
+Verification
+
+Monitor the workflow status on the Actions tab of the GitHub repository (https://github.com/khyathimaddala/8byte).
+Confirm infrastructure updates by checking the AWS Console (e.g., EC2 instances, ALB, S3 bucket) after a successful run.
+Test the pipeline by modifying index.html or a Terraform file and pushing to main.
+
+Challenges and Solutions
+
+Permission Issues: Initial runs might fail with 403 errors if the IAM user lacks sufficient permissions. This was mitigated by ensuring the policy matches the 8byte user’s effective permissions.
+State Management: Potential state file conflicts were avoided by relying on the local state file (consider setting up an S3 backend for production use).
+Timeouts: Large deployments could time out; adjust Terraform timeouts or workflow settings if needed.
+
+Best Practices
+
+Regularly review and rotate AWS credentials stored as secrets.
+Use a Terraform backend (e.g., S3) for state management in a team environment.
+Test changes in a separate branch before merging to main to avoid unintended deployments.
+
+
